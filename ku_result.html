@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>University of Kashmir – Result</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; background: #c8d5c8; color: #000; }
+
+#noise-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.18;
+}
+
+.top-bar { background: #1a2a6c; display:flex; align-items:center; padding:4px 8px; gap:10px; }
+.logo-circle { width:50px;height:50px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0; }
+.header-title { color:#fff; text-align:center; flex:1; }
+.header-title h1 { font-size:18px; font-variant:small-caps; letter-spacing:1px; font-weight:bold; }
+.orange-bar { background:#e05c00; color:#fff; text-align:center; font-size:11px; padding:3px 6px; font-weight:bold; }
+
+.layout { display:flex; min-height:calc(100vh - 80px); }
+
+.sidebar { width:110px; flex-shrink:0; background:#1a2a6c; }
+.sidebar-home { background:#2a3a8c; color:#fff; font-weight:bold; padding:5px 8px; font-size:13px; border-bottom:1px solid #3a4aac; }
+.sidebar a { display:block; color:#aac0ff; text-decoration:none; padding:4px 8px; font-size:11.5px; border-bottom:1px solid #263080; line-height:1.4; }
+.sidebar a:hover { background:#263080; color:#fff; }
+.sidebar-active { background:#2a3a8c!important; color:#fff!important; }
+
+.main { flex:1; background:#dde8dd; }
+
+.search-bar { background:#c8d5c8; border-bottom:1px solid #aaa; padding:6px 10px; display:flex; align-items:flex-start; gap:0; flex-wrap:wrap; }
+.search-section { border-right:1px solid #999; padding:4px 12px 4px 0; margin-right:10px; }
+.search-section:last-child { border-right:none; }
+.search-section > label { font-size:12px; font-weight:bold; display:block; margin-bottom:4px; color:#111; }
+.radio-row { display:flex; gap:12px; margin-bottom:4px; }
+.radio-row label { font-weight:normal; font-size:12px; }
+.search-section input[type=text] { border:1px solid #888; padding:2px 5px; font-size:12px; width:130px; }
+.search-section input[type=date] { border:1px solid #888; padding:2px 5px; font-size:12px; }
+.btn-search { background:#1a2a6c; color:#fff; border:1px solid #000; padding:2px 10px; font-size:12px; cursor:pointer; margin-left:6px; }
+.btn-search:hover { background:#263080; }
+
+.captcha-box-small { display:inline-block; background:linear-gradient(135deg,#ddd,#bbb); border:1px solid #888; padding:2px 8px; font-size:15px; font-weight:bold; letter-spacing:5px; color:#1a2a6c; vertical-align:middle; font-family:'Courier New',monospace; user-select:none; position:relative; overflow:hidden; text-decoration:line-through; text-decoration-color:rgba(80,80,180,0.5); text-decoration-thickness:1px; }
+.captcha-input-small { border:1px solid #888; padding:2px 5px; font-size:12px; width:80px; vertical-align:middle; }
+.refresh-btn { background:#eee; border:1px solid #999; padding:1px 6px; cursor:pointer; font-size:12px; vertical-align:middle; }
+
+.view-section { display:flex; flex-direction:column; gap:4px; }
+.view-section select { font-size:12px; padding:2px; }
+.btn-view { background:#1a2a6c; color:#fff; border:1px solid #000; padding:2px 10px; font-size:12px; cursor:pointer; width:fit-content; }
+.btn-view:hover { background:#263080; }
+
+.content-area { padding:10px; background:#dde8dd; min-height:400px; }
+
+.info-box { background:#fff8e1; border:1px solid #c8a000; padding:8px 12px; font-size:12px; margin-bottom:8px; color:#5a3a00; }
+.error-box { background:#ffe8e8; border:1px solid #cc0000; padding:8px 12px; font-size:12px; margin-bottom:8px; color:#800000; display:none; }
+
+#result-area { display:none; }
+
+.result-title-bar { background:#1a2a6c; color:#fff; text-align:center; padding:5px; font-weight:bold; font-size:13px; margin-bottom:6px; }
+
+.student-info-table { width:100%; border-collapse:collapse; background:#eef3ee; border:1px solid #888; margin-bottom:8px; font-size:12px; }
+.student-info-table td { padding:3px 8px; border:1px solid #bbb; }
+.student-info-table td:first-child,.student-info-table td:nth-child(3) { font-weight:bold; background:#d0dcd0; width:150px; color:#1a2a6c; }
+
+.marks-table { width:100%; border-collapse:collapse; font-size:12px; background:#fff; border:1px solid #888; margin-bottom:8px; }
+.marks-table th { background:#1a2a6c; color:#fff; padding:4px 6px; text-align:center; border:1px solid #2a3a8c; font-size:11.5px; }
+.marks-table td { padding:3px 6px; border:1px solid #ccc; text-align:center; }
+.marks-table tr:nth-child(even) td { background:#f0f5f0; }
+.marks-table tr:hover td { background:#ddeedd; }
+.td-left { text-align:left!important; }
+
+.grade-O { color:#006600; font-weight:bold; }
+.grade-Ap { color:#004400; font-weight:bold; }
+.grade-A { color:#226622; font-weight:bold; }
+.grade-Bp { color:#664400; font-weight:bold; }
+.grade-B { color:#885500; font-weight:bold; }
+.grade-C { color:#996600; font-weight:bold; }
+.grade-F { color:#cc0000; font-weight:bold; }
+
+.result-summary-table { width:100%; border-collapse:collapse; font-size:12px; background:#eef3ee; border:1px solid #888; margin-bottom:8px; }
+.result-summary-table th { background:#263080; color:#fff; padding:4px 8px; border:1px solid #3a4aac; }
+.result-summary-table td { padding:4px 8px; border:1px solid #bbb; text-align:center; }
+.sgpa-highlight { font-size:15px; font-weight:bold; color:#006600; }
+.pass-badge { background:#006600; color:#fff; padding:1px 8px; font-weight:bold; font-size:12px; }
+
+.footer-bar { background:#1a2a6c; color:#fff; text-align:center; padding:5px; font-size:11px; }
+.footer-bar strong { color:#ffdd88; }
+.notice { background:#fffbe6; border:1px solid #c8a000; font-size:11px; padding:5px 8px; color:#5a3a00; margin-bottom:8px; }
+
+.print-row { margin-bottom:6px; }
+.btn-print { background:#1a2a6c; color:#fff; border:1px solid #000; padding:3px 14px; font-size:12px; cursor:pointer; }
+.btn-print:hover { background:#263080; }
+.btn-back { background:#888; color:#fff; border:1px solid #555; padding:3px 10px; font-size:12px; cursor:pointer; margin-left:6px; }
+.btn-back:hover { background:#666; }
+
+@media print {
+  .sidebar,.search-bar,.print-row { display:none!important; }
+  body,.main,.content-area { background:#fff!important; }
+}
+</style>
+</head>
+<body>
+<canvas id="noise-overlay"></canvas>
+
+<div class="top-bar">
+  <div class="logo-circle">🎓</div>
+  <div class="header-title">
+    <h1>University of Kashmir</h1>
+  </div>
+</div>
+<div class="orange-bar">
+  B.Tech Electronics &amp; Communication Engg. 1st Semester (Batch 2025) Examination held in Autumn, 2025
+</div>
+
+<div class="layout">
+
+  <div class="sidebar">
+    <div class="sidebar-home">Home</div>
+    <a href="#" class="sidebar-active">Latest Results</a>
+    <a href="#">PG Professional</a>
+    <a href="#">PG Prof Notifications</a>
+    <a href="#">PG Non-Professional</a>
+    <a href="#">PG Non-Prof Notifications</a>
+    <a href="#">UG Professional</a>
+    <a href="#">UG Prof Notifications</a>
+    <a href="#">UG Non-Professional</a>
+    <a href="#">UG Non-Prof Notifications</a>
+    <a href="#">MBBS</a>
+    <a href="#">B.E.D.</a>
+    <a href="#">B.E.D. Notifications</a>
+    <a href="#">PG Diploma Courses</a>
+    <a href="#">Certificate Courses</a>
+    <a href="#">Diploma Courses</a>
+  </div>
+
+  <div class="main">
+
+    <div class="search-bar">
+
+      <div class="search-section">
+        <label>Select selection criteria</label>
+        <div class="radio-row">
+          <label><input type="radio" name="crit" checked> Roll No</label>
+          <label><input type="radio" name="crit"> Name</label>
+          <label><input type="radio" name="crit"> Registration No</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;">
+          <span style="font-size:12px;">Roll No:</span>
+          <input type="text" id="roll-input" autocomplete="off" />
+          <button class="btn-search" onclick="doSearch()">Search</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:5px;">
+          <span style="font-size:12px;white-space:nowrap;">Date of Birth:</span>
+          <input type="date" id="dob-input" style="width:130px;" />
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:12px;">Captcha:</span>
+          <canvas id="cap-canvas" width="110" height="30" style="border:1px solid #888;vertical-align:middle;cursor:pointer;" title="Click to refresh" onclick="refreshCap()"></canvas>
+          <button class="refresh-btn" onclick="refreshCap()" title="Refresh">↻</button>
+          <input type="text" class="captcha-input-small" id="cap-input" placeholder="Enter code" maxlength="5" />
+        </div>
+      </div>
+
+      <div class="search-section">
+        <label>View college result</label>
+        <div class="view-section">
+          <select style="width:160px;">
+            <option>Select All Colleges</option>
+            <option>Zakura – Inst. of Technology</option>
+          </select>
+          <div style="display:flex;gap:4px;margin-top:2px;">
+            <button class="btn-view">View</button>
+            <button class="btn-view">Print</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-section">
+        <label>Filter result by marks</label>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:12px;">Marks</span>
+          <select style="font-size:12px;padding:2px;"><option>&gt;</option><option>&lt;</option><option>=</option></select>
+          <input type="text" style="width:50px;font-size:12px;border:1px solid #888;padding:2px;" />
+        </div>
+        <button class="btn-view" style="margin-top:4px;">View</button>
+      </div>
+
+    </div><!-- /search-bar -->
+
+    <div class="content-area">
+
+      <div class="error-box" id="err-box"></div>
+      <div id="default-msg" class="info-box">Enter your Roll Number, Date of Birth and the Captcha code shown, then click <strong>Search</strong> to view your result.</div>
+
+      <div id="result-area">
+
+        <div class="print-row">
+          <button class="btn-print" onclick="window.print()">Print</button>
+          <button class="btn-back" onclick="goBack()">New Search</button>
+        </div>
+
+        <div class="result-title-bar">UNIVERSITY OF KASHMIR &nbsp;—&nbsp; B.Tech Electronics &amp; Communication Engineering &nbsp;|&nbsp; 1st Semester Result (Autumn 2025)</div>
+
+        <table class="student-info-table">
+          <tr>
+            <td>Student Name</td><td><strong>TAWHEED SYED SHAH</strong></td>
+            <td>Roll No.</td><td><strong>25160145033</strong></td>
+          </tr>
+          <tr>
+            <td>Registration No.</td><td>2297-ZCU-2025</td>
+            <td>Enrolment No.</td><td>25160145033</td>
+          </tr>
+          <tr>
+            <td>Programme</td><td>B.Tech Electronics &amp; Comm. Engg.</td>
+            <td>Semester</td><td>1st Semester (Fresh 2025)</td>
+          </tr>
+          <tr>
+            <td>Batch</td><td>BTECHECE 2025 (Level 1)</td>
+            <td>College / Campus</td><td>University Campus, Zakura (IoT)</td>
+          </tr>
+          <tr>
+            <td>Exam Session</td><td>Autumn 2025</td>
+            <td>Result Declared</td><td>05-May-2026</td>
+          </tr>
+        </table>
+
+        <div style="position:relative;">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;transform:rotate(-8deg);">
+            <span style="font-size:22px;font-weight:bold;color:red;opacity:0.75;white-space:nowrap;text-shadow:1px 1px 2px rgba(0,0,0,0.2);">Tawheeds karekh Ongej</span>
+          </div>
+        <table class="marks-table">
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Paper Code</th>
+              <th style="text-align:left;padding-left:6px;">Subject Title</th>
+              <th>Cr.</th>
+              <th>Int.<br>Marks</th>
+              <th>Ext.<br>Marks</th>
+              <th>Total</th>
+              <th>Max</th>
+              <th>Grade</th>
+              <th>Grd.<br>Pts</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td><td>BECEBMT125</td>
+              <td class="td-left">Mathematics-I (Calculus)</td>
+              <td>4</td><td>22</td><td>42</td><td>64</td><td>100</td>
+              <td class="grade-Bp">B+</td><td>7</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>2</td><td>BECEBPH125</td>
+              <td class="td-left">Physics (Electromagnetics, Semiconductors &amp; Optoelectronics)</td>
+              <td>4</td><td>28</td><td>57</td><td>85</td><td>100</td>
+              <td class="grade-Ap">A+</td><td>9</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>3</td><td>BECEEEG125</td>
+              <td class="td-left">Engineering Graphics</td>
+              <td>3</td><td>20</td><td>38</td><td>58</td><td>100</td>
+              <td class="grade-B">B</td><td>6</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>4</td><td>BECEEEW125</td>
+              <td class="td-left">Engineering Workshop</td>
+              <td>3</td><td>21</td><td>37</td><td>58</td><td>100</td>
+              <td class="grade-B">B</td><td>6</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>5</td><td>BECEEPP125</td>
+              <td class="td-left">Programming &amp; Problem Solving Techniques</td>
+              <td>4</td><td>16</td><td>29</td><td>45</td><td>100</td>
+              <td class="grade-C">C</td><td>5</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>6</td><td>BECEHPC125</td>
+              <td class="td-left">Professional Communication</td>
+              <td>4</td><td>29</td><td>62</td><td>91</td><td>100</td>
+              <td class="grade-O">O</td><td>10</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>7</td><td>BECEHUH125</td>
+              <td class="td-left">Universal Human Values</td>
+              <td>2</td><td>28</td><td>63</td><td>91</td><td>100</td>
+              <td class="grade-O">O</td><td>10</td><td>Pass</td>
+            </tr>
+            <tr>
+              <td>8</td><td>BECEASP125</td>
+              <td class="td-left">Sports</td>
+              <td>2</td><td>—</td><td>—</td><td>—</td><td>—</td>
+              <td class="grade-A">A</td><td>8</td><td>Pass</td>
+            </tr>
+          </tbody>
+        </table>
+        </div><!-- /marks wrapper -->
+
+        <table class="result-summary-table">
+          <thead>
+            <tr>
+              <th>Credits Registered</th>
+              <th>Credits Earned</th>
+              <th>SGPA</th>
+              <th>CGPA</th>
+              <th>Overall Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>26</td>
+              <td>26</td>
+              <td class="sgpa-highlight">7.80</td>
+              <td class="sgpa-highlight">7.80</td>
+              <td><span class="pass-badge">PASS — PROMOTED</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="marks-table" style="margin-bottom:8px;">
+          <thead>
+            <tr><th colspan="8" style="text-align:left;padding-left:8px;background:#263080;">Grading Scale Reference</th></tr>
+            <tr><th>Grade</th><th>O</th><th>A+</th><th>A</th><th>B+</th><th>B</th><th>C</th><th>F</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Points</strong></td><td>10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>0</td></tr>
+            <tr><td><strong>Marks %</strong></td><td>≥90</td><td>80–89</td><td>70–79</td><td>60–69</td><td>50–59</td><td>40–49</td><td>&lt;40</td></tr>
+          </tbody>
+        </table>
+
+        <div class="notice">
+          <strong>Note:</strong> This result is provisional and subject to verification by the Controller of Examinations, University of Kashmir.
+          Discrepancies, if any, should be reported within 30 days of declaration. Verification Code: <strong>6950</strong>.
+        </div>
+
+      </div><!-- /result-area -->
+
+    </div><!-- /content-area -->
+
+    <div class="footer-bar">
+      ©2010 Directorate of Information Technology &amp; Support System, University of Kashmir<br>
+      <strong>Managed &amp; Updated by Examination Wing</strong>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let cap = '';
+
+  function refreshCap() {
+    cap = '';
+    for (let i = 0; i < 5; i++) cap += chars[Math.floor(Math.random() * chars.length)];
+    drawCaptcha();
+    document.getElementById('cap-input').value = '';
+  }
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function drawCaptcha() {
+    const canvas = document.getElementById('cap-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#e0d8c8');
+    grad.addColorStop(1, '#c8c0a8');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Noise dots
+    for (let i = 0; i < 60; i++) {
+      ctx.fillStyle = `rgba(${Math.floor(rand(60,160))},${Math.floor(rand(60,160))},${Math.floor(rand(100,200))},0.4)`;
+      ctx.fillRect(rand(0, W), rand(0, H), 1.5, 1.5);
+    }
+
+    // Strike lines
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = `rgba(${Math.floor(rand(30,120))},${Math.floor(rand(30,100))},${Math.floor(rand(120,200))},0.55)`;
+      ctx.lineWidth = rand(0.5, 1.5);
+      ctx.beginPath();
+      ctx.moveTo(rand(0, W * 0.3), rand(0, H));
+      ctx.bezierCurveTo(rand(0, W), rand(0, H), rand(0, W), rand(0, H), rand(W * 0.7, W), rand(0, H));
+      ctx.stroke();
+    }
+
+    // Draw each character with slight rotation/offset
+    const spacing = W / (cap.length + 1);
+    for (let i = 0; i < cap.length; i++) {
+      ctx.save();
+      const x = spacing * (i + 1);
+      const y = H / 2 + rand(-2, 2);
+      ctx.translate(x, y);
+      ctx.rotate(rand(-0.25, 0.25));
+      ctx.font = `bold ${Math.floor(rand(15, 19))}px Courier New, monospace`;
+      ctx.fillStyle = `rgb(${Math.floor(rand(10,60))},${Math.floor(rand(10,60))},${Math.floor(rand(100,160))})`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cap[i], 0, 0);
+      ctx.restore();
+    }
+  }
+
+  refreshCap();
+
+  const VALID_ROLLS = ['25160145033', '2297-zcu-2025'];
+
+  function doSearch() {
+    const roll    = document.getElementById('roll-input').value.trim();
+    const dob     = document.getElementById('dob-input').value;
+    const userCap = document.getElementById('cap-input').value.trim().toUpperCase();
+    const err     = document.getElementById('err-box');
+    const def     = document.getElementById('default-msg');
+    const res     = document.getElementById('result-area');
+
+    if (userCap !== cap) {
+      err.style.display = 'block';
+      err.textContent = '⚠ Incorrect captcha code. Please re-enter.';
+      refreshCap();
+      res.style.display = 'none';
+      def.style.display = 'none';
+      return;
+    }
+    if (!VALID_ROLLS.includes(roll.toLowerCase()) || !dob) {
+      err.style.display = 'block';
+      err.textContent = '⚠ No record found. Please check Roll Number and Date of Birth.';
+      refreshCap();
+      res.style.display = 'none';
+      def.style.display = 'none';
+      return;
+    }
+    err.style.display = 'none';
+    def.style.display = 'none';
+    res.style.display = 'block';
+  }
+
+  function goBack() {
+    document.getElementById('result-area').style.display = 'none';
+    document.getElementById('default-msg').style.display = 'block';
+    document.getElementById('err-box').style.display = 'none';
+    document.getElementById('roll-input').value = '';
+    document.getElementById('dob-input').value = '';
+    refreshCap();
+    window.scrollTo({ top: 0 });
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  // Full-page scanline / grain noise overlay
+  (function() {
+    const cv = document.getElementById('noise-overlay');
+    function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; drawNoise(); }
+    function drawNoise() {
+      const ctx = cv.getContext('2d');
+      const W = cv.width, H = cv.height;
+      const img = ctx.createImageData(W, H);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255 | 0;
+        d[i] = d[i+1] = d[i+2] = v;
+        d[i+3] = 28;
+      }
+      ctx.putImageData(img, 0, 0);
+      // scanlines
+      for (let y = 0; y < H; y += 3) {
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fillRect(0, y, W, 1);
+      }
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    setInterval(drawNoise, 120);
+  })();
+</script>
+</body>
+</html>
